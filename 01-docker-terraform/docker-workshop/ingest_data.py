@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import pandas as pd
 import click
 from sqlalchemy import create_engine
 from tqdm.auto import tqdm
 
-dtype = {
+trip_dtype = {
     "VendorID": "Int64",
     "passenger_count": "Int64",
     "trip_distance": "float64",
@@ -25,9 +22,21 @@ dtype = {
     "congestion_surcharge": "float64"
 }
 
-parse_dates = [
+zone_dtype = {
+    "Location ID": "Int64",
+    "Borough": "string",
+    "Zone": "string",
+    "Service_zone": "string",
+}
+
+yellow_parse_dates = [
     "tpep_pickup_datetime",
     "tpep_dropoff_datetime"
+]
+
+green_parse_dates = [
+    "lpep_pickup_datetime",
+    "lpep_dropoff_datetime",
 ]
 
 
@@ -35,6 +44,8 @@ def ingest_data(
         url: str,
         engine,
         target_table: str,
+        dtype: dict,
+        parse_dates: dict = None,
         chunksize: int = 100000,
 ) -> pd.DataFrame:
     df_iter = pd.read_csv(
@@ -79,22 +90,49 @@ def ingest_data(
 @click.option('--pg-host', default='localhost', help='PostgreSQL host')
 @click.option('--pg-port', default='5432', help='PostgreSQL port')
 @click.option('--pg-db', default='ny_taxi', help='PostgreSQL database name')
-@click.option('--year', default=2021, type=int, help='Year of the data')
-@click.option('--month', default=1, type=int, help='Month of the data')
+# @click.option('--year', default=2021, type=int, help='Year of the data')
+# @click.option('--month', default=1, type=int, help='Month of the data')
 @click.option('--chunksize', default=100000, type=int, help='Chunk size for ingestion')
 @click.option('--target-table', default='yellow_taxi_data', help='Target table name')
-def main(pg_user, pg_pass, pg_host, pg_port, pg_db, year, month, chunksize, target_table):
+@click.option('--url-suffix', help="URL suffix")
+@click.option('--file-name', help="File name")
+def main(
+    pg_user,
+    pg_pass, 
+    pg_host,
+    pg_port,
+    pg_db,
+    # year,
+    # month,
+    chunksize,
+    target_table,
+    url_suffix,
+    file_name,
+):
     engine = create_engine(f'postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}')
-    url_prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow'
 
-    url = f'{url_prefix}/yellow_tripdata_{year:04d}-{month:02d}.csv.gz'
+    url_prefix = f'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{url_suffix}'
 
-    ingest_data(
+    # url = f'{url_prefix}/yellow_tripdata_{year:04d}-{month:02d}.csv'
+    url = f'{url_prefix}/{file_name}'
+
+    # Get file specific parsing parameters
+    params = dict(
         url=url,
         engine=engine,
         target_table=target_table,
         chunksize=chunksize
     )
+    if "yellow" in file_name:
+        params["dtype"] = trip_dtype
+        params["parse_dates"] = yellow_parse_dates
+    elif "green" in file_name:
+        params["dtype"] = trip_dtype
+        params["parse_dates"] = green_parse_dates
+    elif "zone" in file_name:
+        params["dtype"] = zone_dtype   
+
+    ingest_data(**params)
 
 if __name__ == '__main__':
     main()
