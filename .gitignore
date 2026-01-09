@@ -6,6 +6,10 @@ __pycache__
 .pytest_cache
 
 *.json
+*.gz
+*.csv
+*.xls
+*.xlsx
 
 ignore/
 
