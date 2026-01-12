@@ -6,9 +6,10 @@ with unioned as (
     select * from {{ ref('int_trips_unioned') }}
 ),
 
-payment_types as (
-    select * from {{ ref('payment_type_lookup') }}
-),
+-- TODO: Update this when this model is added to course repo
+-- payment_types as (
+--     select * from {{ ref('payment_type_lookup') }}
+-- ),
 
 cleaned_and_enriched as (
     select
@@ -46,11 +47,13 @@ cleaned_and_enriched as (
 
         -- Enrich with payment type description
         coalesce(u.payment_type, 0) as payment_type,
-        coalesce(pt.payment_type_description, 'Unknown') as payment_type_description
+        -- TODO: Update this
+        --coalesce(pt.payment_type_description, 'Unknown') as payment_type_description
 
     from unioned u
-    left join payment_types pt
-        on coalesce(u.payment_type, 0) = pt.payment_type_code
+    -- TODO: Update this
+    -- left join payment_types pt
+    --     on coalesce(u.payment_type, 0) = pt.payment_type_code
 )
 
 select * from cleaned_and_enriched

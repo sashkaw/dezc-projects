@@ -1,6 +1,14 @@
 ## Setup
 
 - See `flows/*.yml` for Kestra flows used to load in taxi and FHV data to BigQuery
+- Run `load_zones.sh` to load the zone lookup table to BigQuery
+- Run these dbt commands
+
+```
+dbt run --select models/staging
+dbt run --select models/intermediate
+dbt run --select +models/marts/fct_trips.sql
+```
 
 ## Question 1: Understanding dbt model resolution
 

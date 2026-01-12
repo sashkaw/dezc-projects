@@ -9,7 +9,7 @@ sources:
       {%- endif -%}
     schema: |
       {%- if target.type == 'bigquery' -%}
-        dbt_prod
+        example_dataset
       {%- endif -%}
     tables:
       - name: green_tripdata
@@ -97,3 +97,15 @@ sources:
             description: Improvement surcharge
           - name: total_amount
             description: Total amount charged
+      
+      - name: taxi_zone_lookup
+        description: Raw taxi zone lookup records
+        columns:
+          - name: LocationID
+            description: Location ID
+          - name: Borough
+            description: Borough name
+          - name: Zone
+            description: Zone name
+          - name: service_zone
+            description: Service zone name

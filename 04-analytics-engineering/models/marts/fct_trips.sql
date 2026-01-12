@@ -46,7 +46,8 @@ select
     t.improvement_surcharge,
     t.total_amount,
     t.payment_type,
-    t.payment_type_description
+    -- TODO: Update this when this model is added to course repo
+    --t.payment_type_description
 
 from {{ ref('int_trips') }} as t
 -- LEFT JOIN preserves all trips even if zone information is missing or unknown

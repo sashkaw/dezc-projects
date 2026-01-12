@@ -7,4 +7,6 @@ select
     borough,
     zone,
     service_zone
-from {{ ref('taxi_zone_lookup') }}
+-- TODO: Update if course repo adds this model
+-- from {{ ref('taxi_zone_lookup') }}
+from {{ source('raw', 'taxi_zone_lookup') }}
