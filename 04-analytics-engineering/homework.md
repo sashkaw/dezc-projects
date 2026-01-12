@@ -1,3 +1,7 @@
+## Setup
+
+- See `flows/*.yml` for Kestra flows used to load in taxi and FHV data to BigQuery
+
 ## Question 1: Understanding dbt model resolution
 
 Provided you've got the following sources.yaml

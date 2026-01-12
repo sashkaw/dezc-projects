@@ -1,0 +1,132 @@
+
+id: fhv_ny
+namespace: zoomcamp
+description: |
+  Best to add a label `backfill:true` from the UI to track executions created via a backfill.
+
+variables:
+  url_prefix: "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/fhv"
+  file: "fhv_tripdata_{{trigger.date | date('yyyy-MM')}}.csv"
+  gcs_file: "gs://{{kv('GCP_BUCKET_NAME')}}/{{vars.file}}"
+  table: "{{kv('GCP_DATASET')}}.fhv_tripdata_{{trigger.date | date('yyyy_MM')}}"
+  data: "{{outputs.extract.outputFiles['fhv_tripdata_' ~ (trigger.date | date('yyyy-MM')) ~ '.csv']}}"
+
+tasks:
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      file: "{{render(vars.file)}}"
+
+  - id: extract
+    type: io.kestra.plugin.scripts.shell.Commands
+    outputFiles:
+      - "*.csv"
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      - wget -qO- {{render(vars.url_prefix)}}/{{render(vars.file)}}.gz | gunzip > {{render(vars.file)}}
+
+  - id: upload_to_gcs
+    type: io.kestra.plugin.gcp.gcs.Upload
+    from: "{{render(vars.data)}}"
+    to: "{{render(vars.gcs_file)}}"
+
+  - id: bq_fhv_tripdata
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE TABLE IF NOT EXISTS `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.fhv_tripdata`
+      (
+        unique_row_id BYTES,
+        dispatching_base_num STRING,
+        pickup_datetime TIMESTAMP,
+        dropOff_datetime TIMESTAMP,
+        PUlocationID INTEGER,
+        DOlocationID INTEGER,
+        SR_Flag INTEGER,
+        Affiliated_base_number STRING
+      )
+
+  - id: bq_fhv_table_ext
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE OR REPLACE EXTERNAL TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}_ext`
+      (
+        dispatching_base_num STRING,
+        pickup_datetime TIMESTAMP,
+        dropOff_datetime TIMESTAMP,
+        PUlocationID INTEGER,
+        DOlocationID INTEGER,
+        SR_Flag INTEGER,
+        Affiliated_base_number STRING
+      )
+      OPTIONS (
+          format = 'CSV',
+          uris = ['{{render(vars.gcs_file)}}'],
+          skip_leading_rows = 1,
+          ignore_unknown_values = TRUE
+      );
+
+  - id: bq_fhv_table_tmp
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      CREATE OR REPLACE TABLE `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}`
+      AS
+      SELECT
+        MD5(CONCAT(
+          COALESCE(CAST(dispatching_base_num AS STRING), ""),
+          COALESCE(CAST(pickup_datetime AS STRING), ""),
+          COALESCE(CAST(dropOff_datetime AS STRING), ""),
+          COALESCE(CAST(PUlocationID AS STRING), ""),
+          COALESCE(CAST(DOlocationID AS STRING), ""),
+          COALESCE(CAST(SR_Flag AS STRING), ""),
+          COALESCE(CAST(Affiliated_base_number AS STRING), "")
+        )) AS unique_row_id,
+        "{{render(vars.file)}}" AS filename,
+        *
+      FROM `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}_ext`;
+
+  - id: bq_fhv_merge
+    type: io.kestra.plugin.gcp.bigquery.Query
+    sql: |
+      MERGE INTO `{{kv('GCP_PROJECT_ID')}}.{{kv('GCP_DATASET')}}.fhv_tripdata` T
+      USING `{{kv('GCP_PROJECT_ID')}}.{{render(vars.table)}}` S
+      ON T.unique_row_id = S.unique_row_id
+      WHEN NOT MATCHED THEN
+        INSERT (
+          unique_row_id,
+          dispatching_base_num,
+          pickup_datetime,
+          dropOff_datetime,
+          PUlocationID,
+          DOlocationID,
+          SR_Flag,
+          Affiliated_base_number
+        )
+        VALUES (
+          S.unique_row_id,
+          S.dispatching_base_num,
+          S.pickup_datetime,
+          S.dropOff_datetime,
+          S.PUlocationID,
+          S.DOlocationID,
+          S.SR_Flag,
+          S.Affiliated_base_number
+        );
+
+  - id: purge_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+    description: To avoid cluttering your storage, we will remove the downloaded files
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{secret('GCP_CREDS')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"
+      bucket: "{{kv('GCP_BUCKET_NAME')}}"
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 1 * *"
+
