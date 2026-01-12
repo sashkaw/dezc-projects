@@ -70,9 +70,8 @@ services:
               api-key: ${GEMINI_API_KEY}
           server:
             basicAuth:
-              enabled: true
-              username: "foo@mail.tmp" # it must be a valid email address
-              password: somewordshere
+              username: "foo@mail.com" # it must be a valid email address
+              password: Somewordshere0987
           repository:
             type: postgres
           storage:
