@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw taxi trip data from NYC TLC
+    database: |
+      {%- if target.type == 'bigquery' -%}
+        {{ env_var('GCP_PROJECT_ID', 'dezc-dev') }}
+      {%- endif -%}
+    schema: |
+      {%- if target.type == 'bigquery' -%}
+        example_dataset
+      {%- endif -%}
+    tables:      
+      - name: taxi_zone_lookup
+        description: Raw taxi zone lookup records
+        columns:
+          - name: LocationID
+            description: Location ID
+          - name: Borough
+            description: Borough name
+          - name: Zone
+            description: Zone name
+          - name: service_zone
+            description: Service zone name
