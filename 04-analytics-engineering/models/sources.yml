@@ -3,14 +3,8 @@ version: 2
 sources:
   - name: raw
     description: Raw taxi trip data from NYC TLC
-    database: |
-      {%- if target.type == 'bigquery' -%}
-        {{ env_var('GCP_PROJECT_ID', 'dezc-dev') }}
-      {%- endif -%}
-    schema: |
-      {%- if target.type == 'bigquery' -%}
-        example_dataset
-      {%- endif -%}
+    database: dezc-dev
+    schema: example_dataset
     tables:
       - name: green_tripdata
         description: Raw green taxi trip records
