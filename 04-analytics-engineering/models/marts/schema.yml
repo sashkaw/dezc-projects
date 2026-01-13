@@ -114,6 +114,5 @@ models:
           - accepted_values:
               arguments:
                 values: [0, 1, 2, 3, 4, 5, 6]
-      # TODO: Update this when this model is added to course repo
-      # - name: payment_type_description
-      #   description: Human-readable payment method description
+      - name: payment_type_description
+        description: Human-readable payment method description

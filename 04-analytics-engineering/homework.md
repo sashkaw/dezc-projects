@@ -1,13 +1,17 @@
 ## Setup
 
 - See `flows/*.yml` for Kestra flows used to load in taxi and FHV data to BigQuery
-- Run `load_zones.sh` to load the zone lookup table to BigQuery
+- Install dbt core following the steps in the `README.md`
 - Run these dbt commands
-
 ```
-dbt run --select models/staging
-dbt run --select models/intermediate
-dbt run --select +models/marts/fct_trips.sql
+# Install dependencies
+dbtcore deps
+
+# Load taxi zone and payment type lookup table seed data
+dbtcore seed
+
+# Run dbt models
+dbtcore run --select +models/marts/fct_trips.sql
 ```
 
 ## Question 1: Understanding dbt model resolution

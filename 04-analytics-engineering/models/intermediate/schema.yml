@@ -44,6 +44,5 @@ models:
         description: Total amount charged to passenger
         tests:
           - not_null
-      # TODO: Update this
-      # - name: payment_type_description
-      #   description: Human-readable payment method description
+      - name: payment_type_description
+        description: Human-readable payment method description
