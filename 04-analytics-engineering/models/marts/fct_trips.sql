@@ -11,6 +11,16 @@
 -- Materialized incrementally to handle large datasets efficiently
 
 select
+    -- Extra dimensions
+    extract(YEAR FROM t.pickup_datetime) AS year,
+    extract(QUARTER FROM t.pickup_datetime) AS quarter,
+    concat(
+      extract(YEAR FROM t.pickup_datetime),
+      '/Q',
+      extract(QUARTER FROM t.pickup_datetime)
+    ) AS year_quarter,
+    extract(MONTH FROM t.pickup_datetime) AS month,
+
     -- Trip identifiers
     t.trip_id,
     t.vendor_id,

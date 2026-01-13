@@ -32,6 +32,6 @@ from {{ source('raw', 'green_tripdata') }}
 where vendorid is not null
 
 -- Limit records for faster iteration and memory management
-{% if target.name == 'dev' %}
-limit {{ var('record_limit', 10000) }}
-{% endif %}
+-- {% if target.name == 'dev' %}
+-- limit {{ var('record_limit', 10000) }}
+-- {% endif %}

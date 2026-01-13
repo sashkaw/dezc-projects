@@ -105,3 +105,24 @@ sources:
             description: Zone name
           - name: service_zone
             description: Service zone name
+      
+      - name: fhv_tripdata
+        description: Raw FHV trip data
+        columns:
+          - name: unique_row_id
+            description: Unique ID
+          - name: dispatching_base_num
+            description: The TLC Base License Number of the base that dispatched the trip
+          - name: pickup_datetime
+            description: Pick-up time
+          - name: dropOff_datetime
+            description: Dropoff time
+          - name: PUlocationID
+            description: Pick-up location ID
+          - name: DOlocationID
+            description: Dropoff location ID
+          - name: SR_Flag
+            description: Indicates if the trip was a part of a shared ride chain offered by a High Volume FHV company (e.g. Uber Pool, Lyft Line). For shared trips, the value is 1. For non-shared rides, this field is null.
+          - name: Affiliated_base_number
+            description: Base number of the base with which the vehicle is affiliated. This must be provided even if the affiliated base is the same as the dispatching base.
+
