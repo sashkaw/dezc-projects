@@ -1,7 +1,8 @@
 ## Question 1. Understanding docker first run
-Run docker with the python:3.12.8 image in an interactive mode, use the entrypoint bash.
 
-What's the version of pip in the image?
+Run docker with the `python:3.13` image. Use an entrypoint `bash` to interact with the container.
+
+What's the version of `pip` in the image?
 
 ### Steps:
 ```
@@ -9,16 +10,50 @@ docker run -it \
     --rm \
     --entrypoint=bash \
     --name=q1 \
-    python:3.12.8
+    python:3.13
 
 pip --version
 ```
 
 ### Answer:
-`24.3.1`
+
+`25.3`
 
 ## Question 2. Understanding Docker networking and docker-compose
-Given the following docker-compose.yaml, what is the hostname and port that pgadmin should use to connect to the postgres database?
+
+Given the following `docker-compose.yaml`, what is the `hostname` and `port` that pgadmin should use to connect to the postgres database?
+
+```yaml
+services:
+  db:
+    container_name: postgres
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
+      POSTGRES_DB: 'ny_taxi'
+    ports:
+      - '5433:5432'
+    volumes:
+      - vol-pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "pgadmin@pgadmin.com"
+      PGADMIN_DEFAULT_PASSWORD: "pgadmin"
+    ports:
+      - "8080:80"
+    volumes:
+      - vol-pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  vol-pgdata:
+    name: vol-pgdata
+  vol-pgadmin_data:
+    name: vol-pgadmin_data
+```
 
 ### Steps:
 - We can use the `container_name` for the `db` service to find the `hostname` value used for the shared network.
@@ -28,6 +63,9 @@ Given the following docker-compose.yaml, what is the hostname and port that pgad
 `postgres:5432`
 
 ## Prepare Postgres
+
+## TODO: Update this since hw changed -> need to get parquet file for Nov 2025
+
 ```
 # Start postgres and pgadmin services
 docker-compose up -d
@@ -44,10 +82,10 @@ docker run -it \
     --pg-host=pgdatabase \
     --pg-port=5432 \
     --pg-db=ny_taxi \
-    --target-table=green_taxi_trips_2019_11 \
+    --target-table=green_taxi_trips_2025_11 \
     --chunksize=100000 \
     --url-suffix=green \
-    --file-name="green_tripdata_2019-10.csv.gz"
+    --file-name="green_tripdata_2025-11.csv.gz"
 
 # Load the zone data
 docker run -it \
@@ -65,39 +103,23 @@ docker run -it \
 ```
 
 ## Question 3. Trip Segmentation Count
-During the period of October 1st 2019 (inclusive) and November 1st 2019 (exclusive), how many trips, respectively, happened:
+
+For the trips in November 2025 (lpep_pickup_datetime between '2025-11-01' and '2025-12-01', exclusive of the upper bound), how many trips had a `trip_distance` of less than or equal to 1 mile?
 
 ### Steps:
 ```
-WITH
-tmp AS (
-    SELECT
-        CASE
-            WHEN trip_distance <= 1 THEN '0: <=1 MILE'
-            WHEN trip_distance > 1 AND trip_distance <= 3 THEN '1: 1 - 3 MILES'
-            WHEN trip_distance > 3 AND trip_distance <= 7 THEN '2: 3 - 7 MILES'
-            WHEN trip_distance > 7 AND trip_distance <= 10 THEN '3: 7 - 10 MILES'
-            WHEN trip_distance > 10 THEN '4: >10 MILES'
-            ELSE '5: OTHER'
-        END AS seg,
-        *
-    FROM green_taxi_trips_2019_11
-    WHERE
-        DATE(lpep_pickup_datetime) >= DATE('2019-10-01')
-        AND DATE(lpep_pickup_datetime) < DATE('2019-11-01')
-        AND DATE(lpep_dropoff_datetime) >= DATE('2019-10-01')
-        AND DATE(lpep_dropoff_datetime) < DATE('2019-11-01')
-)
-SELECT 
-    seg,
-    count(*) AS n
-FROM tmp
-GROUP BY seg
-ORDER BY seg;
+SELECT
+    COUNT(*)
+FROM green_taxi_trips_2019_11
+WHERE
+    DATE(lpep_pickup_datetime) >= '2025-11-01'
+    AND DATE(lpep_pickup_datetime) < '2025-12-01'
+    AND trip_distance <= 1;
 ```
 
 ### Answer:
-`104,802; 198,924; 109,603; 27,678; 35,189`
+
+
 
 ## Question 4. Longest trip for each day
 Which was the pick up day with the longest trip distance? Use the pick up time for your calculations.
