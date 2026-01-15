@@ -61,6 +61,8 @@ volumes:
 ## Prepare the Data
 
 ```
+cd 01-docker-terraform/docker-workshop
+
 # Start postgres and pgadmin services
 docker-compose up -d
 
