@@ -14,6 +14,12 @@ __pycache__
 
 ignore/
 
+# Spark
+_SUCCESS
+*.crc
+*.parquet
+.ipynb_checkpoints/
+
 # Local .terraform directories
 .terraform/
 
