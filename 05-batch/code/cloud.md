@@ -33,10 +33,7 @@ Creating a worker:
 
 ```bash
 URL="spark://de-zoomcamp.europe-west1-b.c.de-zoomcamp-nytaxi.internal:7077"
-./sbin/start-slave.sh ${URL}
-
-# for newer versions of spark use that:
-#./sbin/start-worker.sh ${URL}
+./sbin/start-worker.sh ${URL}
 ```
 
 Turn the notebook into a script:

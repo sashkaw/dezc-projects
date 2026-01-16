@@ -19,6 +19,7 @@ _SUCCESS
 *.crc
 *.parquet
 .ipynb_checkpoints/
+*.jar
 
 # Local .terraform directories
 .terraform/
