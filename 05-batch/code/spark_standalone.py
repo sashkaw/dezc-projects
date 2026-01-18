@@ -1,81 +1,50 @@
 import pyspark
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql import types
 import argparse
-import os
-import glob
 
+# Get CLI args
 parser = argparse.ArgumentParser()
-
 parser.add_argument("--input_green", required=True)
-# parser.add_argument("--input_yellow", required=True)
+parser.add_argument("--input_yellow", required=True)
 parser.add_argument("--output", required=True)
-
 args = parser.parse_args()
-
 input_green = args.input_green
-# input_yellow = args.input_yellow
+input_yellow = args.input_yellow
 output = args.output
 
-spark = (
-    SparkSession.builder.appName("test").getOrCreate()
-)
+# Initialize Spark Session
+spark = SparkSession.builder.appName("test").getOrCreate()
 
-files = glob.glob(input_green)
-print(files)
-df_green = spark.read \
-    .parquet(*files)
-
+# Read the green trip data
+df_green = spark.read.parquet(input_green)
 df_green = df_green.withColumnRenamed(
     "lpep_pickup_datetime", "pickup_datetime"
 ).withColumnRenamed("lpep_dropoff_datetime", "dropoff_datetime")
 
-# df_yellow = spark.read.parquet(input_yellow)
+# Read the yellow trip data
+df_yellow = spark.read.parquet(input_yellow)
+df_yellow = df_yellow.withColumnRenamed(
+    "tpep_pickup_datetime", "pickup_datetime"
+).withColumnRenamed("tpep_dropoff_datetime", "dropoff_datetime")
 
+# Union the green and yellow datasets
+common_columns = []
+yellow_columns = set(df_yellow.columns)
+for col in df_green.columns:
+    if col in yellow_columns:
+        common_columns.append(col)
 
-# df_yellow = df_yellow.withColumnRenamed(
-#     "tpep_pickup_datetime", "pickup_datetime"
-# ).withColumnRenamed("tpep_dropoff_datetime", "dropoff_datetime")
+df_green_sel = df_green.select(common_columns).withColumn(
+    "service_type", F.lit("green")
+)
+df_yellow_sel = df_yellow.select(common_columns).withColumn(
+    "service_type", F.lit("yellow")
+)
+df_trips_data = df_green_sel.unionAll(df_yellow_sel)
 
-# common_columns = []
-
-# yellow_columns = set(df_yellow.columns)
-
-# for col in df_green.columns:
-#     if col in yellow_columns:
-#         common_columns.append(col)
-
-common_columns = df_green.columns
-
-df_green_sel = df_green.select(common_columns).withColumn("service_type", F.lit("green"))
-
-# df_yellow_sel = df_yellow.select(common_columns).withColumn(
-#     "service_type", F.lit("yellow")
-# )
-
-# df_trips_data = df_green_sel.unionAll(df_yellow_sel)
-
-df_trips_data = df_green_sel
-
-df_trips_data.groupBy("service_type").count().show()
-
-df_trips_data.registerTempTable("trips_data")
-
-
-spark.sql(
-    """
-SELECT
-    service_type,
-    count(1)
-FROM
-    trips_data
-GROUP BY 
-    service_type
-"""
-).show()
-
-
+# Run SQL query
+df_trips_data.createOrReplaceTempView("trips_data")
 df_result = spark.sql(
     """
 SELECT 
@@ -104,6 +73,5 @@ GROUP BY
 """
 )
 
-
-df_result.coalesce(1) \
-    .write.parquet(output, mode="overwrite")
+# Save report
+df_result.coalesce(1).write.parquet(output, mode="overwrite")
