@@ -16,6 +16,9 @@ output = args.output
 # Initialize Spark Session
 spark = SparkSession.builder.appName("test").getOrCreate()
 
+# Use temp bucket created by Dataproc
+spark.conf.set("temporaryGcsBucket", "dataproc-temp-us-east1-1021886630330-uinfan59")
+
 # Read the green trip data
 df_green = spark.read.parquet(input_green)
 df_green = df_green.withColumnRenamed(
@@ -73,5 +76,12 @@ GROUP BY
 """
 )
 
-# Save report
-df_result.coalesce(1).write.parquet(output, mode="overwrite")
+if "gs://" in output:
+    # Save report to GCS
+    df_result.coalesce(1).write.parquet(output, mode="overwrite")
+else:
+    # Save report to BigQuery
+    # Don't need to coalesce because don't need to merge multiple files
+    df_result.write.format("bigquery") \
+        .option("table", output) \
+        .save()
