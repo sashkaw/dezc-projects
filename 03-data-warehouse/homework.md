@@ -1,5 +1,3 @@
-*NOTE: This homework was completed when the instructions were marked 'DRAFT', so may need to revisit before submitting.*
-
 ## Setup
 
 - Run the following Kestra flow as a backfill from 2024-01-01 to 2024-06-02:
