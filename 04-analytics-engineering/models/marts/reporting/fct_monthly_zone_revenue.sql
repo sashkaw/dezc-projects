@@ -5,7 +5,7 @@
 select
     -- Grouping dimensions
     coalesce(pickup_zone, 'Unknown Zone') as pickup_zone,
-    date_trunc('month', pickup_datetime) as revenue_month,  -- Truncate to first day of month
+    cast(date_trunc(pickup_datetime, month) as date) as revenue_month,
     service_type,
 
     -- Revenue breakdown (summed by zone, month, and service type)
